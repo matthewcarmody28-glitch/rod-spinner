@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE ROD SPINNER — MAKER PROJECT 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo+Narrow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       RESET & CUSTOM PROPERTIES
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0e0e0e;
+      --p1:      #161616;
+      --p2:      #1d1d1d;
+      --text:    #e8e6e1;
+      --dim:     #b8b4ae;
+      --accent:  #ff5b1f;
+      --gold:    #ffb547;
+      --rule:    #2a2a2a;
+      --grid:    24px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Archivo Narrow', sans-serif;
+      font-size: 18px;
+      line-height: 1.7;
+      overflow-x: hidden;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.038) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.038) 1px, transparent 1px);
+      background-size: var(--grid) var(--grid);
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: calc(var(--grid) * 4) calc(var(--grid) * 4);
+      transform: translateY(var(--par, 0px));
+      will-change: transform;
+    }
+
+    /* ============================================================
+       SCROLL PROGRESS
+    ============================================================ */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: var(--accent);
+      z-index: 9999;
+      transition: width 80ms linear;
+    }
+
+    /* ============================================================
+       META BLOCK
+    ============================================================ */
+    #meta {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.5rem;
+      z-index: 200;
+      text-align: right;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    #meta.on { opacity: 1; transform: none; }
+    #meta span {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      line-height: 1.9;
+    }
+    #meta .hi { color: var(--accent); }
+    @media (max-width: 768px) { #meta { display: none; } }
+
+    /* ============================================================
+       SHARED UTILITIES
+    ============================================================ */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    section { padding: 7rem 0; position: relative; }
+
+    .rule { height: 1px; background: var(--rule); }
+
+    .section-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .5rem;
+    }
+    .disp {
+      font-family: 'Bebas Neue', sans-serif;
+      line-height: .88;
+      letter-spacing: .02em;
+    }
+
+    /* L-bracket corners */
+    .bracketed { position: relative; }
+    .bracketed::before, .bracketed::after {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+    }
+    .bracketed::before {
+      top: -8px; left: -8px;
+      border-top: 2px solid var(--accent);
+      border-left: 2px solid var(--accent);
+    }
+    .bracketed::after {
+      bottom: -8px; right: -8px;
+      border-bottom: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+    }
+
+    /* Img label overlay */
+    .img-tag {
+      position: absolute;
+      bottom: .9rem; left: .9rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .6rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(14,14,14,.9);
+      padding: .3rem .6rem;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    /* Photo placeholder */
+    .ph {
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--p2) 0, var(--p2) 10px,
+        var(--bg) 10px, var(--bg) 20px
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ph-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      background: rgba(14,14,14,.92);
+      padding: .5rem 1rem;
+      border: 1px solid var(--rule);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    /* Reveal animation — toggled both ways so it repeats */
+    .rv {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
+    .rv.on { opacity: 1; transform: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rv { opacity: 1; transform: none; transition: none; }
+      body::before { transform: none !important; }
+      .scroll-line { animation: none !important; }
+    }
+
+    /* ============================================================
+       MODAL / LIGHTBOX
+    ============================================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,.94);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-box {
+      background: var(--p1);
+      border: 1px solid var(--accent);
+      max-width: 780px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 3.5rem;
+      position: relative;
+      transform: translateY(24px) scale(.97);
+      transition: transform .35s cubic-bezier(.16,1,.3,1);
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) var(--p2);
+    }
+    .modal-overlay.open .modal-box { transform: none; }
+
+    .modal-close {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      padding: .4rem .8rem;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .modal-close:hover { background: var(--accent); color: var(--bg); }
+
+    /* Modal image (lightbox) */
+    .modal-img {
+      width: 100%;
+      max-height: 65vh;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Modal typography overrides — make everything bigger */
+    .modal-body .iter-tag,
+    .modal-body .assess-tag,
+    .modal-body .step-n-modal {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .82rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .6rem;
+      display: block;
+    }
+    .modal-body .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 4rem);
+      line-height: .9;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+    .modal-body .modal-text {
+      font-size: 1.15rem;
+      color: var(--text);
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+    .modal-body .modal-fix-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 1.75rem 0 1rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--rule);
+      display: block;
+    }
+    .modal-body .modal-fix {
+      font-size: 1.15rem;
+      color: var(--text);
+      line-height: 1.8;
+    }
+    .modal-body .modal-gold {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--gold);
+      line-height: .95;
+      margin-bottom: 1rem;
+    }
+    .modal-body .modal-caption {
+      font-size: 1.1rem;
+      color: var(--dim);
+      line-height: 1.75;
+    }
+
+    /* Expand hint on clickable cards */
+    .expandable {
+      cursor: pointer;
+      position: relative;
+    }
+    .expandable::after {
+      content: '// EXPAND';
+      position: absolute;
+      top: 1rem; right: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .55rem;
+      letter-spacing: .15em;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity .25s;
+      pointer-events: none;
+    }
+    .expandable:hover::after { opacity: 1; }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0;
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      align-items: center;
+      width: 100%;
+      padding: 6rem 0 5.5rem;
+    }
+    .hero-text { position: relative; }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 1.25rem;
+    }
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(5.5rem, 14vw, 13rem);
+      line-height: .83;
+      letter-spacing: .01em;
+      margin-bottom: 2rem;
+    }
+    .hero-title .hi { color: var(--accent); }
+    .hero-sub {
+      font-size: 1.25rem;
+      color: var(--dim);
+      max-width: 400px;
+      line-height: 1.65;
+      border-left: 3px solid var(--accent);
+      padding-left: 1.25rem;
+    }
+    .hero-img-wrap {
+      position: relative;
+      height: 72vh;
+      max-height: 720px;
+      overflow: hidden;
+    }
+    .hero-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: grayscale(18%);
+      transition: filter .45s ease;
+      display: block;
+    }
+    .hero-img-wrap:hover img { filter: grayscale(0%); }
+    .hero-img-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 38%, rgba(14,14,14,.65) 100%);
+      pointer-events: none;
+    }
+    .scroll-ind {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .5rem;
+      z-index: 10;
+    }
+    .scroll-ind span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: dropline 1.6s ease-in-out infinite;
+    }
+    @keyframes dropline {
+      0%   { opacity: 0; clip-path: inset(0 0 100% 0); }
+      40%  { opacity: 1; clip-path: inset(0 0 0 0); }
+      80%  { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(18px); }
+    }
+
+    /* ============================================================
+       THE PROBLEM
+    ============================================================ */
+    #problem { background: var(--p1); }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 5rem;
+      align-items: start;
+    }
+    .problem-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10rem;
+      line-height: .9;
+      color: var(--rule);
+      letter-spacing: -.02em;
+    }
+    .problem-body h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 7vw, 6rem);
+      line-height: .88;
+      margin-bottom: 1.75rem;
+    }
+    .problem-body p {
+      font-size: 1.15rem;
+      color: var(--text);
+      max-width: 660px;
+      line-height: 1.85;
+    }
+    .problem-body p + p { margin-top: 1.25rem; }
+    .hi-price { color: var(--accent); font-weight: 700; }
+
+    /* ============================================================
+       STATS BAR
+    ============================================================ */
+    #stats {
+      padding: 4rem 0;
+      background: var(--p2);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+    }
+    .stat + .stat { border-left: 1px solid var(--rule); }
+    .stat { padding: .5rem 0; }
+    .stat-n {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 8vw, 7.5rem);
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-l {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-top: .6rem;
+    }
+
+    /* ============================================================
+       DESIGN PROCESS
+    ============================================================ */
+    #process { background: var(--bg); }
+    .process-intro {
+      max-width: 700px;
+      font-size: 1.15rem;
+      color: var(--text);
+      line-height: 1.85;
+      border-left: 3px solid var(--rule);
+      padding-left: 1.75rem;
+      margin: 1.75rem 0 3rem;
+    }
+    .process-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+    }
+    .step { display: flex; flex-direction: column; }
+    .step-img {
+      position: relative;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      background: var(--p1);
+      margin-bottom: 1.25rem;
+    }
+    .step-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: grayscale(25%);
+      transition: filter .4s ease, transform .4s ease;
+    }
+    .step-img:hover img { filter: grayscale(0%); transform: scale(1.04); }
+    .step-n {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 4rem;
+      color: var(--rule);
+      line-height: 1;
+      margin-bottom: .2rem;
+    }
+    .step-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .6rem;
+    }
+    .step-cap {
+      font-size: 1rem;
+      color: var(--dim);
+      line-height: 1.6;
+    }
+    /* Process step is also expandable (for image lightbox) */
+    .step.expandable::after { top: .75rem; right: .75rem; }
+
+    /* ============================================================
+       TOOLS & TECH
+    ============================================================ */
+    #tools { background: var(--p1); }
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .85rem;
+      margin-top: 2.25rem;
+    }
+    .chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: .6rem 1.2rem;
+      border: 1px solid var(--rule);
+      color: var(--dim);
+      background: transparent;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .4s ease, transform .4s ease, background .2s;
+    }
+    .chip.digi { border-color: var(--accent); color: var(--accent); }
+    .chip.on { opacity: 1; transform: none; }
+    .chip:hover { background: var(--p2); }
+    .tools-note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-top: 1.75rem;
+    }
+    .tools-note .hi { color: var(--accent); }
+
+    /* ============================================================
+       ITERATION LOG
+    ============================================================ */
+    #iteration { background: var(--p2); }
+    .iter-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .82rem;
+      letter-spacing: .12em;
+      color: var(--gold);
+      margin: .75rem 0 3rem;
+    }
+    .iter-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+    .iter-card {
+      background: var(--p1);
+      border: 1px solid var(--rule);
+      padding: 2.5rem;
+      transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    }
+    .iter-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent);
+      box-shadow: 0 6px 48px rgba(255,91,31,.15);
+    }
+    .iter-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .5rem;
+    }
+    .iter-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      line-height: .95;
+      margin-bottom: 1.25rem;
+    }
+    .iter-body {
+      font-size: 1rem;
+      color: var(--dim);
+      line-height: 1.75;
+    }
+    .iter-fix-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 1.5rem 0 .85rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+    .iter-fix {
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    /* ============================================================
+       FINAL BUILD / SPEC SHEET
+    ============================================================ */
+    #final { background: var(--bg); }
+    .final-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      align-items: start;
+      margin-bottom: 3rem;
+    }
+    .final-photo {
+      position: relative;
+      overflow: hidden;
+    }
+    .final-photo img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      display: block;
+      border: 1px solid var(--rule);
+      filter: grayscale(15%);
+      transition: filter .4s ease;
+    }
+    .final-photo:hover img { filter: grayscale(0%); }
+    .final-photo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 48%, rgba(14,14,14,.5) 100%);
+      pointer-events: none;
+    }
+    .spec-panel {
+      background: var(--p1);
+      border: 1px solid var(--rule);
+      padding: 2.5rem;
+    }
+    .spec-panel h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      line-height: .88;
+      margin-bottom: 2rem;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      padding: .9rem 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 1rem;
+    }
+    .spec-row:last-of-type { border-bottom: none; }
+    .spec-k {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      flex-shrink: 0;
+    }
+    .spec-v { color: var(--text); text-align: right; }
+    .spec-closing {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      letter-spacing: .1em;
+      color: var(--gold);
+      margin-top: 1.75rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--rule);
+      line-height: 1.8;
+    }
+    .final-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    .gal-item {
+      position: relative;
+      aspect-ratio: 16/10;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+    }
+    .gal-item img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: grayscale(22%);
+      transition: filter .4s ease, transform .4s ease;
+      display: block;
+    }
+    .gal-item:hover img { filter: grayscale(0%); transform: scale(1.04); }
+    .gal-item::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(14,14,14,.55) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    /* expand hint for gallery */
+    .gal-item.expandable::after {
+      background: linear-gradient(to top, rgba(14,14,14,.55) 0%, transparent 55%);
+    }
+    .gal-item.expandable .expand-hint-img {
+      position: absolute;
+      top: .75rem; right: .75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .55rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(14,14,14,.88);
+      padding: .25rem .5rem;
+      z-index: 6;
+      opacity: 0;
+      transition: opacity .25s;
+      pointer-events: none;
+    }
+    .gal-item:hover .expand-hint-img { opacity: 1; }
+
+    /* ============================================================
+       INSPIRATION
+    ============================================================ */
+    #inspiration { background: var(--p1); }
+    .quote-wrap {
+      max-width: 840px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .quote-wrap h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 7vw, 6rem);
+      line-height: .88;
+      margin-bottom: 2.5rem;
+    }
+    .quote-body {
+      font-size: 1.3rem;
+      line-height: 1.9;
+      color: var(--text);
+      font-style: italic;
+      position: relative;
+      padding: 0 2.5rem;
+    }
+    .quote-body::before {
+      content: '\201C';
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8rem;
+      color: var(--accent);
+      opacity: .3;
+      position: absolute;
+      top: -3rem; left: 0;
+      line-height: 1;
+    }
+
+    /* ============================================================
+       IMPACT
+    ============================================================ */
+    #impact { background: var(--p2); }
+    .impact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    .impact-text h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 7vw, 6rem);
+      line-height: .88;
+      margin-bottom: 1.75rem;
+    }
+    .impact-text p {
+      font-size: 1.15rem;
+      color: var(--text);
+      line-height: 1.85;
+    }
+    .impact-callout {
+      background: var(--p1);
+      border-left: 4px solid var(--accent);
+      padding: 2.75rem;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      line-height: 1.1;
+      color: var(--text);
+    }
+    .impact-callout .hi { color: var(--accent); }
+
+    /* ============================================================
+       SELF-ASSESSMENT
+    ============================================================ */
+    #assessment { background: var(--p1); }
+    .assess-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .assess-card {
+      background: var(--p2);
+      border: 1px solid var(--rule);
+      padding: 2.5rem;
+      transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    }
+    .assess-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      box-shadow: 0 6px 40px rgba(255,91,31,.12);
+    }
+    .assess-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: .5rem;
+    }
+    .assess-tag .hi { color: var(--accent); }
+    .assess-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      line-height: .95;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+    }
+    .assess-body {
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.75;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      background: var(--p2);
+      border-top: 1px solid var(--rule);
+      padding: 2.25rem 0;
+      position: relative;
+      z-index: 1;
+    }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .f-l, .f-r {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .f-l { color: var(--dim); }
+    .f-r { color: var(--accent); }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+      .hero-grid,
+      .problem-grid,
+      .final-grid,
+      .impact-grid { grid-template-columns: 1fr; }
+      .hero-img-wrap { height: 55vw; max-height: 480px; }
+      .process-strip { grid-template-columns: repeat(2, 1fr); }
+      .iter-cards,
+      .assess-cards { grid-template-columns: 1fr; }
+      .problem-grid { gap: 2rem; }
+    }
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+      .container { padding: 0 1.5rem; }
+      section { padding: 5rem 0; }
+      .hero-title { font-size: clamp(4rem, 18vw, 6rem); }
+      .process-strip { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .stat + .stat { border-left: none; border-top: 1px solid var(--rule); padding-top: 2rem; margin-top: 2rem; }
+      .final-gallery { grid-template-columns: 1fr; }
+      .footer-row { flex-direction: column; gap: .75rem; text-align: center; }
+      .problem-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+      .problem-num { font-size: 5rem; }
+      .modal-box { padding: 2.25rem 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SCROLL PROGRESS -->
+<div id="progress"></div>
+
+<!-- META BLOCK -->
+<div id="meta">
+  <span>ROD SPINNER</span>
+  <span>MAKER PROJECT</span>
+  <span class="hi">FILE · 001</span>
+</div>
+
+<!-- ================================================================
+     MODAL
+================================================================ -->
+<div id="modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Detail view">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close">// CLOSE ✕</button>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ================================================================
+     HERO
+================================================================ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <div class="hero-text rv">
+        <p class="hero-eyebrow">PERSONAL MAKER PROJECT &middot; 2026</p>
+        <h1 class="hero-title">
+          THE<br>ROD<br><span class="hi">SPINNER</span>
+        </h1>
+        <p class="hero-sub">A battery-powered tool for hand-built fishing rods.</p>
+      </div>
+
+      <div class="hero-img-wrap rv bracketed" style="transition-delay:.2s">
+        <img src="Images/image%20of%20spinner.JPG" alt="The finished rod spinner">
+        <span class="img-tag">// IMG_01 &middot; FINISHED PRODUCT</span>
+      </div>
+
+    </div>
+  </div>
+  <div class="scroll-ind">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     THE PROBLEM
+================================================================ -->
+<section id="problem">
+  <div class="container">
+    <div class="problem-grid">
+
+      <div class="rv">
+        <p class="section-tag">// PROBLEM STATEMENT</p>
+        <div class="problem-num">01</div>
+      </div>
+
+      <div class="problem-body rv" style="transition-delay:.15s">
+        <h2 class="disp">THE PROBLEM</h2>
+        <p>Building custom fishing rods requires a spinner that rotates the blank slowly and steadily for hours while epoxy cures over the thread wraps. Without one, the resin sags and pools instead of curing evenly — and the rod is ruined.</p>
+        <p>Commercial rod spinners run <span class="hi-price">$400–$600</span>. That's a hard sell for a tool that's fundamentally a slow-turning motor on a stick. There had to be a better way.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     STATS BAR
+================================================================ -->
+<section id="stats">
+  <div class="container">
+    <div class="stats-grid">
+
+      <div class="stat rv">
+        <span class="stat-n" data-target="600" data-prefix="$">$0</span>
+        <p class="stat-l">Retail Price Avoided</p>
+      </div>
+
+      <div class="stat rv" style="transition-delay:.1s">
+        <span class="stat-n" data-target="3">0</span>
+        <p class="stat-l">Design Iterations</p>
+      </div>
+
+      <div class="stat rv" style="transition-delay:.2s">
+        <span class="stat-n" data-target="2" data-suffix="+">0</span>
+        <p class="stat-l">Digital Technologies Used</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     DESIGN PROCESS
+================================================================ -->
+<section id="process">
+  <div class="container">
+
+    <div class="rv">
+      <p class="section-tag">// FROM SKETCH TO SPIN</p>
+      <h2 class="disp" style="font-size:clamp(3.5rem,9vw,8rem)">DESIGN PROCESS</h2>
+    </div>
+
+    <p class="process-intro rv" style="transition-delay:.1s">
+      Started with the problem (rods need to spin slowly for hours), sketched a few rough layouts on paper, modeled the rod holder in Fusion 360, printed a prototype, tested it under load, and redesigned the parts that failed. Every version taught me something the previous one didn't.
+    </p>
+
+    <div class="process-strip">
+
+      <div class="step expandable rv" style="transition-delay:.0s"
+           data-modal-type="step"
+           data-step-num="01"
+           data-step-title="SKETCH"
+           data-img-src="Images/notebook%20sketch.JPG"
+           data-step-cap="Rough layouts on paper — problem first, hardware second. The goal was to figure out the mechanical layout before committing to any specific parts.">
+        <div class="step-img">
+          <img src="Images/notebook%20sketch.JPG" alt="Notebook sketch of rod spinner layout">
+          <span class="img-tag">// IMG_01B &middot; SKETCH</span>
+        </div>
+        <div class="step-n">01</div>
+        <div class="step-title">SKETCH</div>
+        <p class="step-cap">Rough layouts on paper — problem first, hardware second.</p>
+      </div>
+
+      <div class="step expandable rv" style="transition-delay:.12s"
+           data-modal-type="step"
+           data-step-num="02"
+           data-step-title="CAD"
+           data-img-src="Images/image%20of%20spinner.JPG"
+           data-img-src="Images/cad%20drawing.png"
+           data-step-cap="Modeled the rod holder in Fusion 360 to fit real hardware exactly. The coupler geometry had to be precise — too loose and it wobbles, too tight and it binds on the motor shaft.">
+        <div class="step-img">
+          <img src="Images/cad%20drawing.png" alt="Fusion 360 CAD model">
+          <span class="img-tag">// IMG_02 &middot; FUSION 360</span>
+        </div>
+        <div class="step-n">02</div>
+        <div class="step-title">CAD</div>
+        <p class="step-cap">Modeled the rod holder in Fusion 360 to fit real hardware exactly.</p>
+      </div>
+
+      <div class="step expandable rv" style="transition-delay:.24s"
+           data-modal-type="step"
+           data-img-src="Images/image%20with%20rod%20in%20the%20device.JPG"
+           data-step-num="03"
+           data-step-title="BUILD"
+           data-step-cap="Final assembly — hardwood base cut on the band saw, wired the motor to the battery pack through the on/off switch, pressed the 3D-printed holder onto the motor wheel, loaded a rod and ran it for a full cure cycle. It worked.">
+        <div class="step-img">
+          <img src="Images/image%20with%20rod%20in%20the%20device.JPG" alt="Rod loaded in the finished spinner">
+          <span class="img-tag">// IMG_03 &middot; FINAL BUILD</span>
+        </div>
+        <div class="step-n">03</div>
+        <div class="step-title">BUILD</div>
+        <p class="step-cap">Final assembly — woodwork, wiring, printed holder, tested under load.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     TOOLS & TECH
+================================================================ -->
+<section id="tools">
+  <div class="container">
+
+    <div class="rv">
+      <p class="section-tag">// TOOLS &amp; TECH</p>
+      <h2 class="disp" style="font-size:clamp(3.5rem,9vw,8rem);margin-bottom:.25rem">TOOLS USED</h2>
+    </div>
+
+    <div class="chip-grid" id="chip-grid">
+      <span class="chip digi">Fusion 360</span>
+      <span class="chip digi">3D Printer (PLA)</span>
+      <span class="chip">Geared DC Motor</span>
+      <span class="chip">9V Battery Pack</span>
+      <span class="chip">On/Off Switch</span>
+      <span class="chip">Band Saw</span>
+      <span class="chip">Rotary Tool</span>
+      <span class="chip">Screw Gun</span>
+      <span class="chip">Hot Glue</span>
+      <span class="chip">Hardwood</span>
+      <span class="chip">Heat-Set Screws</span>
+    </div>
+
+    <p class="tools-note">// <span class="hi">ORANGE</span> = DIGITAL TECHNOLOGY</p>
+
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     ITERATION LOG
+================================================================ -->
+<section id="iteration">
+  <div class="container">
+
+    <div class="rv">
+      <p class="section-tag">// WHAT WENT WRONG</p>
+      <h2 class="disp" style="font-size:clamp(3.5rem,9vw,8rem)">ITERATION LOG</h2>
+      <p class="iter-sub">3 redesigns &nbsp;&middot;&nbsp; 1 working spinner</p>
+    </div>
+
+    <div class="iter-cards">
+
+      <div class="iter-card expandable rv" style="transition-delay:.0s"
+           data-modal-type="iter"
+           data-tag="// ISSUE 01"
+           data-title="SPEED CONTROL"
+           data-body="First motor spun way too fast on every battery tried — AA, AAA, 9V. Resistors couldn't slow it down enough. With a rod loaded, AA/AAA barely turned it; 9V slowly built speed then whipped the off-balance rod around. It was a torque and RPM problem at the same time."
+           data-fix="Swapped to a geared DC motor with built-in reduction. Slow RPM by design, plus enough torque to start on its own and hold steady under load. The gearbox does all the work the resistors couldn't.">
+        <div class="iter-tag">// ISSUE 01</div>
+        <div class="iter-title">SPEED CONTROL</div>
+        <p class="iter-body">First motor spun way too fast on every battery tried — AA, AAA, 9V. Resistors couldn't slow it down enough. With a rod loaded, AA/AAA barely turned it; 9V slowly built speed then whipped the off-balance rod around.</p>
+        <div class="iter-fix-label">// FIX</div>
+        <p class="iter-fix">Swapped to a geared DC motor with built-in reduction. Slow RPM by design, plus enough torque to start on its own and hold steady under load.</p>
+      </div>
+
+      <div class="iter-card expandable rv" style="transition-delay:.15s"
+           data-modal-type="iter"
+           data-tag="// ISSUE 02"
+           data-title="WOBBLE AT HOLDER"
+           data-body="First 3D-printed holder used four bolts with heat-set nuts to clamp the rod butt — like a Christmas tree stand. The hardware worked mechanically, but four bolt heads sitting offset from center threw the holder off-balance. The wobble got worse at speed and made the whole thing look like it was about to fly apart."
+           data-fix="Switched to smaller, lighter screws. Same clamping force, way less mass. Moved the fastener positions to be more symmetrical. No wobble.">
+        <div class="iter-tag">// ISSUE 02</div>
+        <div class="iter-title">WOBBLE AT HOLDER</div>
+        <p class="iter-body">First 3D-printed holder used four bolts with heat-set nuts to clamp the rod butt — like a Christmas tree stand. The hardware worked, but four bolt heads threw the holder off-balance and made the whole assembly wobble badly.</p>
+        <div class="iter-fix-label">// FIX</div>
+        <p class="iter-fix">Switched to smaller, lighter screws. Same clamping force, way less mass. No wobble.</p>
+      </div>
+
+      <div class="iter-card expandable rv" style="transition-delay:.3s"
+           data-modal-type="iter"
+           data-tag="// ISSUE 03"
+           data-title="MOTOR COUPLING"
+           data-body="The 3D-printed holder needed to mount cleanly to the motor shaft to keep the spin true. Designing a precision coupler from scratch — a part that transmits torque without running out — was its own engineering problem. I didn't have the tooling to true up a shaft interface that precisely."
+           data-fix="The geared motor came with a small output wheel already on the shaft. Hot-glued that wheel to the center of the rod holder — instant centered mount, clean spin. Sometimes the best engineering solution is using what's already there.">
+        <div class="iter-tag">// ISSUE 03</div>
+        <div class="iter-title">MOTOR COUPLING</div>
+        <p class="iter-body">The 3D-printed holder needed to mount cleanly to the motor shaft to keep the spin true. Designing a precision coupler from scratch — a part that transmits torque without running out — was its own engineering problem.</p>
+        <div class="iter-fix-label">// FIX</div>
+        <p class="iter-fix">The geared motor came with a small output wheel. Hot-glued that wheel to the center of the rod holder — instant centered mount, clean spin.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     FINAL BUILD / SPEC SHEET
+================================================================ -->
+<section id="final">
+  <div class="container">
+
+    <div class="rv" style="margin-bottom:3rem">
+      <p class="section-tag">// SPEC SHEET</p>
+      <h2 class="disp" style="font-size:clamp(3.5rem,9vw,8rem)">THE FINAL BUILD</h2>
+    </div>
+
+    <div class="final-grid">
+
+      <div class="final-photo rv bracketed expandable"
+           data-modal-type="img"
+           data-img-src="Images/image%20with%20rod%20in%20device%20showing%20how%20the%20holder%20works.JPG"
+           data-img-label="// IMG_04 · HOLDER DETAIL"
+           data-img-caption="The 3D-printed rod holder clamping the rod butt. Four heat-set screws tighten inward to grip the blank. The motor output wheel is hot-glued to the center of the holder for a true, centered spin.">
+        <img src="Images/image%20with%20rod%20in%20device%20showing%20how%20the%20holder%20works.JPG"
+             alt="Rod holder clamping detail">
+        <span class="img-tag">// IMG_04 &middot; HOLDER DETAIL</span>
+      </div>
+
+      <div class="spec-panel rv bracketed" style="transition-delay:.2s">
+        <h3>PRODUCT<br>OVERVIEW</h3>
+
+        <div class="spec-row">
+          <span class="spec-k">Drive</span>
+          <span class="spec-v">Geared DC motor, ~30 RPM under load</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Holder</span>
+          <span class="spec-v">3D-printed PLA, custom Fusion 360, 4&times; heat-set screws</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Power</span>
+          <span class="spec-v">9V battery pack</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Base</span>
+          <span class="spec-v">Hardwood, cut on band saw, mounted with screws</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Coupling</span>
+          <span class="spec-v">Motor output wheel, hot-glued center for true spin</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Switch</span>
+          <span class="spec-v">On/off toggle, wired inline</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-k">Total Cost</span>
+          <span class="spec-v" style="color:var(--accent)">Under $50 in materials</span>
+        </div>
+
+        <p class="spec-closing">
+          Runs unattended for hours. Spins true.<br>
+          Built for under $50 in materials.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Gallery -->
+    <div class="final-gallery">
+
+      <div class="gal-item expandable rv" style="transition-delay:.0s"
+           data-modal-type="img"
+           data-img-src="Images/image%20with%20rod%20in%20the%20device.JPG"
+           data-img-label="// IMG_05 · FULL SETUP"
+           data-img-caption="Full spinner setup with rod blank loaded. The blank extends several feet out the back — this is how it runs during an epoxy cure cycle.">
+        <img src="Images/image%20with%20rod%20in%20the%20device.JPG" alt="Rod spinning in device">
+        <span class="img-tag">// IMG_05 &middot; FULL SETUP</span>
+        <span class="expand-hint-img">// EXPAND</span>
+      </div>
+
+      <div class="gal-item expandable rv" style="transition-delay:.12s"
+           data-modal-type="img"
+           data-img-src="Images/image%20of%20battery%20pack%20and%20on_off%20switch.JPG"
+           data-img-label="// IMG_06 · POWER SUPPLY"
+           data-img-caption="9V battery pack and on/off toggle switch wired inline. The whole power system fits in the base — plug in, flip the switch, and walk away for hours.">
+        <img src="Images/image%20of%20battery%20pack%20and%20on_off%20switch.JPG" alt="Battery pack and switch">
+        <span class="img-tag">// IMG_06 &middot; POWER SUPPLY</span>
+        <span class="expand-hint-img">// EXPAND</span>
+      </div>
+
+
+    </div>
+
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     INSPIRATION
+================================================================ -->
+<section id="inspiration">
+  <div class="container">
+    <div class="quote-wrap rv">
+      <p class="section-tag" style="text-align:center;margin-bottom:1.25rem">// INSPIRATION</p>
+      <h2>WHY THIS PROJECT</h2>
+      <p class="quote-body">
+        I love to fish and I love to build things. Most of my projects pick one or the other — this one sits right in the middle. Custom rod-building has always interested me, and the spinner was the missing piece between wanting to do it and actually being able to.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     IMPACT
+================================================================ -->
+<section id="impact">
+  <div class="container">
+    <div class="impact-grid">
+
+      <div class="impact-text rv">
+        <p class="section-tag">// IMPACT</p>
+        <h2 class="disp">WHAT THIS UNLOCKS</h2>
+        <p>This spinner replaces a $600 commercial unit at a fraction of the cost and unlocks the ability to build custom rods at home. Beyond the savings, the build itself was the point — designing a functional part in Fusion 360, troubleshooting alignment issues, and ending up with a tool I'll actually use.</p>
+      </div>
+
+      <div class="impact-callout rv bracketed" style="transition-delay:.2s">
+        $600 TOOL.<br>
+        <span class="hi">BUILT FOR $50.</span><br>
+        RUNS FOR HOURS.
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     SELF-ASSESSMENT
+================================================================ -->
+<section id="assessment">
+  <div class="container">
+
+    <div class="rv">
+      <p class="section-tag">// SELF-ASSESSMENT</p>
+      <h2 class="disp" style="font-size:clamp(3.5rem,9vw,8rem)">WHAT I TOOK AWAY</h2>
+    </div>
+
+    <div class="assess-cards">
+
+      <div class="assess-card expandable rv" style="transition-delay:.0s"
+           data-modal-type="assess"
+           data-tag="// SKILL"
+           data-title="FUSION 360"
+           data-body="Going from 'I can model a basic shape' to 'I can design a part that has to fit real hardware and transmit torque without wobbling.' That gap is where the real learning lives. Learning to design for physical constraints — tolerances, weight distribution, assembly order — is completely different from making something that looks right on screen.">
+        <div class="assess-tag">// <span class="hi">SKILL</span></div>
+        <div class="assess-title">FUSION 360</div>
+        <p class="assess-body">Going from "I can model a basic shape" to "I can design a part that has to fit real hardware and transmit torque without wobbling." That gap is where the real learning lives.</p>
+      </div>
+
+      <div class="assess-card expandable rv" style="transition-delay:.15s"
+           data-modal-type="assess"
+           data-tag="// MINDSET"
+           data-title="ITERATION TAKES TIME"
+           data-body="V1 will fail somewhere you didn't expect. Plan for V2 from the start. The failures weren't wasted time — they were the whole point. Each version told me something I couldn't have learned from a CAD model alone. The wobble problem, the torque problem, the coupling problem — all of them only showed up once there was a real rod on a real motor.">
+        <div class="assess-tag">// <span class="hi">MINDSET</span></div>
+        <div class="assess-title">ITERATION TAKES TIME</div>
+        <p class="assess-body">V1 will fail somewhere you didn't expect. Plan for V2 from the start. The failures weren't wasted time — they were the whole point.</p>
+      </div>
+
+      <div class="assess-card expandable rv" style="transition-delay:.3s"
+           data-modal-type="assess"
+           data-tag="// NEXT"
+           data-title="BUILD THE ROD"
+           data-body="Use the spinner to build a custom bass rod from blank to wrapped guides. The whole reason I made this. The tool works — now it's time to use it. I want to wrap a full rod with thread guides, apply the epoxy finish, and let this thing do its job. That's the real test.">
+        <div class="assess-tag">// <span class="hi">NEXT</span></div>
+        <div class="assess-title">BUILD THE ROD</div>
+        <p class="assess-body">Use the spinner to build a custom bass rod from blank to wrapped guides. The whole reason I made this. The tool works — now it's time to use it.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ================================================================
+     FOOTER
+================================================================ -->
+<footer>
+  <div class="container">
+    <div class="footer-row">
+      <span class="f-l">MADE BY MATTHEW &nbsp;&middot;&nbsp; GRADE 12 &nbsp;&middot;&nbsp; MAKERSPACE STUDIO</span>
+      <span class="f-r">FILE &nbsp;&middot;&nbsp; 001</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ================================================================
+     SCRIPTS
+================================================================ -->
+<script>
+  /* ── Scroll progress + parallax + meta block ── */
+  const progressBar = document.getElementById('progress');
+  const metaEl      = document.getElementById('meta');
+  let   raf         = false;
+
+  window.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = true;
+    requestAnimationFrame(() => {
+      const sy  = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = (sy / max * 100) + '%';
+      metaEl.classList.toggle('on', sy > window.innerHeight * 0.45);
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.body.style.setProperty('--par', (sy * 0.13) + 'px');
+      }
+      raf = false;
+    });
+  }, { passive: true });
+
+  /* ── Reveal — triggers EVERY time elements enter AND resets when they leave ── */
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      e.target.classList.toggle('on', e.isIntersecting);
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -36px 0px' });
+
+  document.querySelectorAll('.rv').forEach(el => revealObs.observe(el));
+
+  /* Initial reveal for elements already in viewport on load */
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.rv').forEach(el => {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.95) {
+        el.classList.add('on');
+      }
+    });
+  });
+
+  /* ── Tool chips — stagger in each entry, reset on exit ── */
+  const chipGrid = document.getElementById('chip-grid');
+  const chips    = chipGrid.querySelectorAll('.chip');
+  let   chipTimers = [];
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      chipTimers.forEach(t => clearTimeout(t));
+      chipTimers = [];
+      chips.forEach((c, i) => {
+        chipTimers.push(setTimeout(() => c.classList.add('on'), i * 55));
+      });
+    } else {
+      chipTimers.forEach(t => clearTimeout(t));
+      chips.forEach(c => c.classList.remove('on'));
+    }
+  }, { threshold: 0.15 }).observe(chipGrid);
+
+  /* ── Stat counter — runs every time stats section enters viewport ── */
+  const statsEl   = document.getElementById('stats');
+  const statNodes = document.querySelectorAll('.stat-n[data-target]');
+  let   countRafs = [];
+
+  function countUp(el, target, prefix, suffix, dur) {
+    const t0 = performance.now();
+    function tick(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = (prefix || '') + Math.floor(e * target) + (suffix || '');
+      if (p < 1) countRafs.push(requestAnimationFrame(tick));
+    }
+    countRafs.push(requestAnimationFrame(tick));
+  }
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      countRafs.forEach(r => cancelAnimationFrame(r));
+      countRafs = [];
+      statNodes.forEach((el, i) => {
+        const tgt    = parseInt(el.dataset.target);
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        setTimeout(() => countUp(el, tgt, prefix, suffix, 1400), i * 130);
+      });
+    } else {
+      /* Reset to zero when scrolled away so counter re-fires next entry */
+      statNodes.forEach(el => {
+        el.textContent = (el.dataset.prefix || '') + '0' + (el.dataset.suffix || '');
+      });
+    }
+  }, { threshold: 0.35 }).observe(statsEl);
+
+  /* ── Modal system ── */
+  const modalOverlay = document.getElementById('modal');
+  const modalBody    = document.getElementById('modal-body');
+  const modalClose   = document.getElementById('modal-close');
+
+  function openModal(html) {
+    modalBody.innerHTML = html;
+    modalOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    modalClose.focus();
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', e => {
+    if (e.target === modalOverlay) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  /* Build modal content from data attributes */
+  document.querySelectorAll('.expandable[data-modal-type]').forEach(el => {
+    el.addEventListener('click', () => {
+      const type = el.dataset.modalType;
+
+      if (type === 'iter') {
+        openModal(`
+          <span class="iter-tag">${el.dataset.tag}</span>
+          <div class="modal-title">${el.dataset.title}</div>
+          <p class="modal-text">${el.dataset.body}</p>
+          <span class="modal-fix-label">// FIX</span>
+          <p class="modal-fix">${el.dataset.fix}</p>
+        `);
+      }
+
+      else if (type === 'assess') {
+        openModal(`
+          <span class="iter-tag">${el.dataset.tag}</span>
+          <div class="modal-gold">${el.dataset.title}</div>
+          <p class="modal-text">${el.dataset.body}</p>
+        `);
+      }
+
+      else if (type === 'img') {
+        const src     = el.dataset.imgSrc;
+        const label   = el.dataset.imgLabel   || '';
+        const caption = el.dataset.imgCaption || '';
+        openModal(`
+          <img class="modal-img" src="${src}" alt="${label}">
+          ${label   ? `<span class="iter-tag">${label}</span>` : ''}
+          ${caption ? `<p class="modal-caption">${caption}</p>` : ''}
+        `);
+      }
+
+      else if (type === 'step') {
+        const imgSrc  = el.dataset.imgSrc || '';
+        const num     = el.dataset.stepNum   || '';
+        const title   = el.dataset.stepTitle || '';
+        const cap     = el.dataset.stepCap   || '';
+        openModal(`
+          ${imgSrc ? `<img class="modal-img" src="${imgSrc}" alt="${title}">` : ''}
+          <span class="iter-tag">// STEP ${num}</span>
+          <div class="modal-title">${title}</div>
+          <p class="modal-text">${cap}</p>
+        `);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
